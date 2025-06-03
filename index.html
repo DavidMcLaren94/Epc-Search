@@ -1,54 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>EPC Supabase Search Demo</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: sans-serif; max-width: 480px; margin: 30px auto; }
-    input, button { font-size: 1.1em; padding: 6px; margin-top: 8px; }
-    pre { background: #eee; padding: 10px; }
-    label { display: block; margin-top: 15px; }
-  </style>
-</head>
-<body>
-  <h1>EPC Supabase Search</h1>
-  <label for="postcode">Enter postcode:</label>
-  <input id="postcode" type="text" placeholder="e.g. EH10 1AA" />
-  <button id="searchBtn">Search EPC</button>
-  <div id="result"></div>
+<script>
+  const supabase = window.supabase.createClient(
+    'https://ngnfjsctegbwuwekbepf.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbmZqc2N0ZWdid3V3ZWtiZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NDEzNjUsImV4cCI6MjA2NDUxNzM2NX0.meNo8toKu7jtfDmYTZdT-CnkuMRg55Gu33hR89VgvLY'
+  );
 
-  <script>
-    // Setup Supabase client
-    const supabase = window.supabase.createClient(
-      'https://ngnfjsctegbwuwekbepf.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbmZqc2N0ZWdid3V3ZWtiZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NDEzNjUsImV4cCI6MjA2NDUxNzM2NX0.meNo8toKu7jtfDmYTZdT-CnkuMRg55Gu33hR89VgvLY'
-    );
+  document.getElementById('searchBtn').onclick = async function() {
+    document.getElementById('result').textContent = 'Searching...';
+    let { data, error } = await supabase
+      .from('epc_certificates')
+      .select('*')
+      .limit(5);
 
-    document.getElementById('searchBtn').onclick = async function() {
-      const postcodeInput = document.getElementById('postcode').value;
-      const cleanPostcode = postcodeInput.replace(/\s+/g, '').toUpperCase();
-      document.getElementById('result').textContent = 'Searching...';
+    if (error) {
+      document.getElementById('result').textContent = 'Supabase Error: ' + error.message;
+      console.error(error);
+      return;
+    }
 
-      // Fetch all EPC records (in real app: use a filter, but for MVP this is ok)
-      let { data, error } = await supabase
-        .from('epc_certificates')
-        .select('*');
-      if (error) {
-        document.getElementById('result').textContent = 'Error fetching data: ' + error.message;
-        return;
-      }
+    if (!data || data.length === 0) {
+      document.getElementById('result').textContent = 'No EPC data returned. Check API, RLS, and policies.';
+      return;
+    }
 
-      // Find matching postcode
-      let match = data.find(row =>
-        row.POSTCODE && row.POSTCODE.replace(/\s+/g, '').toUpperCase() === cleanPostcode
-      );
-      if (match) {
-        document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(match, null, 2) + '</pre>';
-      } else {
-        document.getElementById('result').textContent = 'No EPC data found for this postcode.';
-      }
-    };
-  </script>
-</body>
-</html>
+    document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+  };
+</script>
