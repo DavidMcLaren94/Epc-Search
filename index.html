@@ -7,8 +7,11 @@
   <style>
     body { font-family: sans-serif; max-width: 480px; margin: 30px auto; }
     input, button { font-size: 1.1em; padding: 6px; margin-top: 8px; }
-    pre { background: #eee; padding: 10px; }
+    .result { background: #f9f9f9; border-radius: 8px; padding: 20px; margin-top: 18px; }
     label { display: block; margin-top: 15px; }
+    .field-label { font-weight: bold; }
+    .not-found { color: #c00; margin-top: 16px; }
+    .epc-upload { margin-top: 30px; }
   </style>
 </head>
 <body>
@@ -18,17 +21,33 @@
   <button id="searchBtn">Search EPC</button>
   <div id="result"></div>
 
+  <div class="epc-upload">
+    <label for="epcUpload">Or upload your EPC file:</label>
+    <input type="file" id="epcUpload" accept=".xml,.csv" />
+    <button id="uploadBtn">Upload EPC</button>
+    <div id="uploadResult"></div>
+  </div>
+
   <script>
     const supabase = window.supabase.createClient(
       'https://ngnfjsctegbwuwekbepf.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbmZqc2N0ZWdid3V3ZWtiZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NDEzNjUsImV4cCI6MjA2NDUxNzM2NX0.meNo8toKu7jtfDmYTZdT-CnkuMRg55Gu33hR89VgvLY'
     );
 
+    const fields = [
+      { key: "ADDRESS_1", label: "Address" },
+      { key: "FLOOR_AREA", label: "Floor area" },
+      { key: "ENERGY_CONSUMPTION", label: "Energy consumption" },
+      { key: "HEATING_USAGE_(kWh)", label: "Heating usage (kWh)" },
+      { key: "HOT_WATER_DEMAND_(kWh)", label: "Hot water demand (kWh)" },
+      { key: "BUILT_TYPE", label: "Built type" },
+      { key: "PROPERTY_TYPE", label: "Property type" },
+    ];
+
     document.getElementById('searchBtn').onclick = async function() {
       const postcodeInput = document.getElementById('postcode').value.trim().toUpperCase();
       document.getElementById('result').textContent = 'Searching...';
 
-      // Query for the exact postcode (matching case/spacing)
       let { data, error } = await supabase
         .from('epc_certificates')
         .select('*')
@@ -41,18 +60,32 @@
       }
 
       if (!data || data.length === 0) {
-        document.getElementById('result').textContent = 'No EPC data found for this postcode.';
+        document.getElementById('result').innerHTML = '<span class="not-found">No EPC data found for this postcode.</span>';
         return;
       }
 
-      // Show only the first match as formatted HTML
       const row = data[0];
-      let html = '<h2>Result:</h2><ul>';
-      for (const key in row) {
-        html += `<li><b>${key}:</b> ${row[key]}</li>`;
-      }
-      html += '</ul>';
+      let html = '<div class="result">';
+      fields.forEach(f => {
+        html += `<div><span class="field-label">${f.label}:</span> ${row[f.key] || '-'}</div>`;
+      });
+      html += '</div>';
       document.getElementById('result').innerHTML = html;
+    };
+
+    // Placeholder for upload functionality
+    document.getElementById('uploadBtn').onclick = function() {
+      const fileInput = document.getElementById('epcUpload');
+      const file = fileInput.files[0];
+      const uploadResult = document.getElementById('uploadResult');
+
+      if (!file) {
+        uploadResult.textContent = 'Please select an EPC file to upload.';
+        return;
+      }
+
+      uploadResult.textContent = 'File "' + file.name + '" selected. (Upload/parse logic coming soon!)';
+      // In production, you'd add XML/CSV parsing and optional upload to your backend or Supabase Storage here.
     };
   </script>
 </body>
