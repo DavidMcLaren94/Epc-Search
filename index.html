@@ -1,29 +1,59 @@
-<script>
-  const supabase = window.supabase.createClient(
-    'https://ngnfjsctegbwuwekbepf.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbmZqc2N0ZWdid3V3ZWtiZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NDEzNjUsImV4cCI6MjA2NDUxNzM2NX0.meNo8toKu7jtfDmYTZdT-CnkuMRg55Gu33hR89VgvLY'
-  );
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EPC Supabase Search Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 480px; margin: 30px auto; }
+    input, button { font-size: 1.1em; padding: 6px; margin-top: 8px; }
+    pre { background: #eee; padding: 10px; }
+    label { display: block; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <h1>EPC Supabase Search</h1>
+  <label for="postcode">Enter postcode:</label>
+  <input id="postcode" type="text" placeholder="e.g. EH10 1AA" />
+  <button id="searchBtn">Search EPC</button>
+  <div id="result"></div>
 
-  document.getElementById('searchBtn').onclick = async function() {
-    const postcodeInput = document.getElementById('postcode').value.trim().toUpperCase();
-    document.getElementById('result').textContent = 'Searching...';
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://ngnfjsctegbwuwekbepf.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nbmZqc2N0ZWdid3V3ZWtiZXBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NDEzNjUsImV4cCI6MjA2NDUxNzM2NX0.meNo8toKu7jtfDmYTZdT-CnkuMRg55Gu33hR89VgvLY'
+    );
 
-    let { data, error } = await supabase
-      .from('epc_certificates')
-      .select('*')
-      .eq('POSTCODE', postcodeInput);
+    document.getElementById('searchBtn').onclick = async function() {
+      const postcodeInput = document.getElementById('postcode').value.trim().toUpperCase();
+      document.getElementById('result').textContent = 'Searching...';
 
-    if (error) {
-      document.getElementById('result').textContent = 'Supabase Error: ' + error.message;
-      console.error(error);
-      return;
-    }
+      // Query for the exact postcode (matching case/spacing)
+      let { data, error } = await supabase
+        .from('epc_certificates')
+        .select('*')
+        .eq('POSTCODE', postcodeInput);
 
-    if (!data || data.length === 0) {
-      document.getElementById('result').textContent = 'No EPC data found for this postcode.';
-      return;
-    }
+      if (error) {
+        document.getElementById('result').textContent = 'Supabase Error: ' + error.message;
+        console.error(error);
+        return;
+      }
 
-    document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-  };
-</script>
+      if (!data || data.length === 0) {
+        document.getElementById('result').textContent = 'No EPC data found for this postcode.';
+        return;
+      }
+
+      // Show only the first match as formatted HTML
+      const row = data[0];
+      let html = '<h2>Result:</h2><ul>';
+      for (const key in row) {
+        html += `<li><b>${key}:</b> ${row[key]}</li>`;
+      }
+      html += '</ul>';
+      document.getElementById('result').innerHTML = html;
+    };
+  </script>
+</body>
+</html>
